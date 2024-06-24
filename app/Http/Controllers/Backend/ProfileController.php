@@ -13,28 +13,39 @@ class ProfileController extends Controller
         return view('admin.profile.index');
     }
     public function updateProfile(Request $request)
-{
-    $request->validate([
-        'name' => ['required', 'max:100'],
-        'email' => ['required', 'email', 'unique:users,email,' . Auth::user()->id],
-        'image' => ['image', 'max:2048']
-    ]);
+    {
+        $request->validate([
+            'name' => ['required', 'max:100'],
+            'email' => ['required', 'email', 'unique:users,email,' . Auth::user()->id],
+            'image' => ['image', 'max:2048']
+        ]);
 
-    $user = Auth::user();
+        $user = Auth::user();
 
-    if ($request->hasFile('image')) {
-        if (File::exists(public_path($user->image))) {
-            File::delete(public_path($user->image));
+        if ($request->hasFile('image')) {
+            if (File::exists(public_path($user->image))) {
+                File::delete(public_path($user->image));
+            }
+            $image = $request->file('image');
+            $imageName = time() . '_' . $image->getClientOriginalName();
+            $image->move(public_path('uploads'), $imageName);
+            $user->image = '/uploads/' . $imageName;
         }
-        $image = $request->file('image');
-        $imageName = time() . '_' . $image->getClientOriginalName();
-        $image->move(public_path('uploads'), $imageName);
-        $user->image = '/uploads/' . $imageName;
+        $user->name = $request->input('name');
+        $user->email = $request->input('email');
+        $user->save();
+        toastr()->success('Profile updated successfully!');
+        return redirect()->back();
     }
-    $user->name = $request->input('name');
-    $user->email = $request->input('email');
-    $user->save();
-    return redirect()->back();
-}
-
+    public function updatePassword(Request $request){
+        $request->validate([
+            'current_password'=>['required', 'current_password'],
+            'password'=>['required','confirmed','min:8']
+        ]);
+        $request->user()->update([
+            'password'=>bcrypt($request->password)
+        ]);
+        toastr()->success('Password updated successfully!');
+        return redirect()->back();
+    }
 }
