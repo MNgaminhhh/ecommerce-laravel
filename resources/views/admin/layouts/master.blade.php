@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" name="viewport">
   <title>General Dashboard &mdash; Stisla</title>
 
@@ -15,6 +16,9 @@
   <link rel="stylesheet" href="{{asset('backend/assets/modules/weather-icon/css/weather-icons.min.css')}}">
   <link rel="stylesheet" href="{{asset('backend/assets/modules/weather-icon/css/weather-icons-wind.min.css')}}">
   <link rel="stylesheet" href="{{asset('backend/assets/modules/summernote/summernote-bs4.css')}}">
+  <link rel="stylesheet" href="//cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css">
+  <link rel="stylesheet" href="//cdn.datatables.net/2.0.8/js/dataTables.min.js">
+  <link rel="stylesheet" href="https://cdn.datatables.net/2.0.8/css/dataTables.bootstrap5.css">
 
   <!-- Template CSS -->
   <link rel="stylesheet" href="{{asset('backend/assets/css/style.css')}}">
@@ -73,9 +77,14 @@
   <!-- Page Specific JS File -->
   <script src="{{asset('backend/assets/js/page/index-0.js')}}"></script>
 
+  <script src="//cdn.datatables.net/2.0.8/css/dataTables.dataTables.min.css"></script>
+  <script src="//cdn.datatables.net/2.0.8/js/dataTables.min.js"></script>
+
   <!-- Template JS File -->
   <script src="{{asset('backend/assets/js/scripts.js')}}"></script>
   <script src="{{asset('backend/assets/js/custom.js')}}"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  @stack('scripts')
   <script>
     @if ($errors->any())
         @foreach ($errors->all() as $error)
@@ -84,6 +93,51 @@
             @endphp
         @endforeach
     @endif
+   </script>
+   <script>
+    $(document).ready(function(){
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+            }
+        });
+        $('body').on('click','.delete-item',function(event){
+            event.preventDefault();
+            let deleteUrl = $(this).attr('href');
+            Swal.fire({
+                title: 'Are you sure?',
+                showDenyButton: true,
+                icon:'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes',
+                denyButtonText: 'No',
+                customClass: {
+                    actions: 'my-actions',
+                    cancelButton: 'order-1 right-gap',
+                    confirmButton: 'order-2',
+                    denyButton: 'order-3',
+                },
+                }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        type:'DELETE',
+                        url:deleteUrl,
+                        success:function(data){
+                            console.log(data);
+                            window.location.reload();
+                        },
+                        error:function(xhr, status,error){
+                            console.log(error)
+                        }
+                    })
+
+                } else if (result.isDenied) {
+                    Swal.fire('Changes are not saved', '', 'info')
+                }
+            })
+
+        })
+    })
    </script>
 </body>
 </html>
