@@ -1,5 +1,12 @@
 @php
-    $categories = \App\Models\Category::all();
+    $categories = \App\Models\Category::where('status','1')
+    ->with(['subCategories'=>function ($query) {
+        $query->where('status','1')
+        ->with(['childCategories'=>function ($query) {
+            $query->where('status','1');
+        }]);
+    }])
+    ->get();
 @endphp
 
 <nav class="wsus__main_menu d-none d-lg-block">
@@ -13,22 +20,23 @@
                     <ul class="wsus_menu_cat_item show_home toggle_menu">
                         {{-- <li><a href="#"><i class="fas fa-star"></i> hot promotions</a></li> --}}
                         @foreach ($categories as $category)
-                            <li><a class="wsus__droap_arrow" href="#"><i class="{{$category->icon}}"></i> {{$category->name}} </a>
-                                <ul class="wsus_menu_cat_droapdown">
-                                    <li><a href="#">New Arrivals <i class="fas fa-angle-right"></i></a>
-                                        <ul class="wsus__sub_category">
-                                            <li><a href="#">New Arrivals</a> </li>
-                                            <li><a href="#">Best Sellers</a></li>
-                                            <li><a href="#">Trending</a></li>
-                                            <li><a href="#">Clothing</a></li>
-                                            <li><a href="#">Bags</a></li>
-                                            <li><a href="#">Home Audio & Theaters</a></li>
-                                            <li><a href="#">TV & Videos</a></li>
-                                            <li><a href="#">Camera</a></li>
-                                            <li><a href="#">Photos & Videos</a></li>
-                                        </ul>
-                                    </li>
-                                </ul>
+                            <li><a class="{{count($category->subCategories)>0 ? 'wsus__droap_arrow' : ''}}" href="#"><i class="{{$category->icon}}"></i> {{$category->name}} </a>
+                                @if (count($category->subCategories)>0)
+                                    <ul class="wsus_menu_cat_droapdown">
+                                        @foreach ($category->subCategories as $subcategory)
+                                            <li><a href="#">{{$subcategory->name}} <i class="{{count($subcategory->childCategories)>0?'fas fa-angle-right':''}}"></i></a>
+                                                @if (count($subcategory->childCategories)>0)
+                                                    <ul class="wsus__sub_category">
+                                                        @foreach ($subcategory->childCategories as $childCategory)
+                                                            <li><a href="#">{{$childCategory->name}}</a> </li>
+                                                        @endforeach
+                                                    </ul>
+                                                @endif
+                                            </li>
+                                        @endforeach
+
+                                    </ul>
+                                @endif
                             </li>
                         @endforeach
 
